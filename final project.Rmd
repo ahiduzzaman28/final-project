@@ -1,0 +1,82 @@
+---
+title: 'Final Project'
+author: "Ahiduzzaman"
+date: "6/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## The goal of my project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. I have created a report describing how I have built my model, how I have used cross validation, what I think the expected out of sample error is, and why I made the choices. I have also used my prediction model to predict 20 different test cases.
+
+
+**Loading libraries
+
+```{r}
+library(tidyverse)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(rattle)
+```
+
+
+** Reading files
+
+```{r}
+set.seed(12)
+training=read.csv("C:\\Users\\Acer\\Desktop\\final-project\\pml-training.csv")
+testing=read.csv("C:\\Users\\Acer\\Desktop\\final-project\\pml-testing.csv")
+```
+
+
+**Cleaning data
+
+```{r}
+feat=names(testing[,colSums(is.na(testing)) == 0])[8:59]
+trainclasse = training[,c(feat,"classe")]
+testproblem = testing[,c(feat,"problem_id")]
+```
+
+
+**Partioning data
+
+```{r}
+inTrain = createDataPartition(trainclasse$classe, p=0.7, list = FALSE)
+fortraining = trainclasse[inTrain,]
+fortesting = trainclasse[-inTrain,]
+```
+
+
+**Decision tree prediction
+
+```{r}
+set.seed(12)
+dmodel = rpart(classe ~ ., data = fortraining, method = "class")
+fancyRpartPlot(dmodel)
+dpredict = predict(dmodel, fortesting, type = "class")
+confusionMatrix(factor(dpredict), factor(fortesting$classe))
+fortraining$classe=factor(fortraining$classe)
+```
+
+
+**Using random forest for prediction
+
+```{r}
+rfmodel=randomForest(classe~.,data=fortraining)
+rfpredict=predict(rfmodel,fortesting,type = "class")
+fortesting$classe=factor(fortesting$classe)
+confusionMatrix(rfpredict,fortesting$classe)
+```
+
+--We can see that the random forest prediction has been pretty accurate (99.67%) for the testing data. So will use the random forrest model for this
+
+
+**Random forest model to predict and submitting
+
+```{r}
+finalpredict <- predict(rfmodel, testing, type = "class")
+finalpredict
+```
